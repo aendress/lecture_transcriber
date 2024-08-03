@@ -10,7 +10,7 @@ Ansgar Endress
 
 0.0001
 
-This project is pretty much experimental.
+This project is pretty much experimental, as is the documentation. At some point, there will hopefully be a less clunky version.
 
 ## What the Script Does
 
