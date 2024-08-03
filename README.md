@@ -14,21 +14,20 @@ This project is pretty much experimental, as is the documentation. At some point
 
 ## What the Script Does
 
-The Lecture Transcriber is a Perl script designed to process lecture recordings that contain both an audio stream and a video stream of lecture slides. It utilizes various tools to extract, transcribe, and analyze the content. Here's a detailed breakdown of its functions:
+Lecture Transcriber is a Perl script designed to process lecture recordings that contain both an audio stream and a video stream of lecture slides. It creates structured lecture notes based on the lecture audio (and optionally the lecture slides), using the workflow below:
 
-1. Analyzes the input video to detect scene changes, which typically correspond to slide transitions (using FFmpeg).
-2. Extracts still images of each detected scene along with their timestamps.
-3. Allows the user to review and edit the extracted timestamps, enabling them to:
+1. Detect scene changes (i.e., slide changes) using FFmpeg.
+2. Extract still images of each detected scene/slide along with their timestamps.
+3. Allow the user to review and edit the extracted timestamps, enabling them to:
    - Group slides into logical sections
    - Remove any unwanted or irrelevant slides
-4. Based on the user's edits, extracts video clips for each group of slides (using FFmpeg).
+4. Based on the user's edits, extract video clips for each group of slides (using FFmpeg).
 5. Transcribes the audio for each extracted clip (using Whisper).
 6. Optionally describes the content of each slide using a visual language model (using llava via Ollama).
-7. Generates refined transcriptions using specified large language models, potentially incorporating slide descriptions (using models like GPT-4 via Ollama).
-8. Compiles all processed information into a YAML file for further use.
-9. Produces an overall lecture summary and generates multiple-choice questions (MCQs) for each section (using language models via Ollama).
+7. Generate cleaned transcriptions using specified large language models, potentially incorporating slide descriptions (using models like GPT-4 via Ollama). The current defaults are llama3.1 and mistral-nemo. 
+8. Compiles lecture notes as well as a variety of other information into a YAML file for further use.
+9. Produces an overall lecture summary and generates multiple-choice questions (MCQs) for each section (using language models via Ollama). This last step is not yet particularly useful. 
 
-This process transforms a lecture recording into a structured set of notes, summaries, and review materials, making it easier for students or educators to review and study the content.
 
 ## Usage
 
