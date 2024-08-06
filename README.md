@@ -1,3 +1,6 @@
+Certainly! Here's the complete, updated README.md file:
+
+```markdown
 # Lecture Transcriber
 
 ## Author
@@ -28,7 +31,6 @@ Lecture Transcriber is a Perl script designed to process lecture recordings that
 8. Compiles lecture notes as well as a variety of other information into a YAML file for further use.
 9. Produces an overall lecture summary and generates multiple-choice questions (MCQs) for each section (using language models via Ollama). This last step is not yet particularly useful. 
 
-
 ## Usage
 
 ### Basic Usage
@@ -57,13 +59,26 @@ Lecture Transcriber is a Perl script designed to process lecture recordings that
 - `--debug`: Enable debug output
 - `--help`: Display help message and exit
 
+YAML output options:
+- `--yaml-print-group`: Include group in YAML output (default: yes)
+- `--no-yaml-print-group`: Exclude group from YAML output
+- `--yaml-print-start-scene`: Include start_scene in YAML output (default: no)
+- `--yaml-print-end-scene`: Include end_scene in YAML output (default: no)
+- `--yaml-print-start-time`: Include start_time in YAML output (default: yes)
+- `--yaml-print-end-time`: Include end_time in YAML output (default: yes)
+- `--yaml-print-clip-file`: Include clip_file in YAML output (default: yes)
+- `--yaml-print-scenes`: Include scenes in YAML output (default: no)
+- `--yaml-print-original-transcription`: Include original_transcription in YAML output (default: yes)
+- `--yaml-print-slide-description`: Include slide_description in YAML output (default: yes)
+- `--yaml-print-cleaned-transcriptions`: Include cleaned_transcriptions in YAML output (default: yes)
+
 ### Example
 
 ```
-./lecture_transcriber.pl --sensitivity=0.1 --extra-duration=1 --language=en --models=llama3.1,mistral-nemo --use-slides --temperature=0.7 --top-k=20 --top-p=0.4 --num_ctx=8192 --make-summary-and-mcqs lecture_video.mp4
+./lecture_transcriber.pl --sensitivity=0.1 --extra-duration=1 --language=en --models=llama3.1,mistral-nemo --use-slides --temperature=0.7 --top-k=20 --top-p=0.4 --num_ctx=8192 --make-summary-and-mcqs --yaml-print-group --yaml-print-start-time --yaml-print-end-time --yaml-print-cleaned-transcriptions lecture_video.mp4
 ```
 
-This command will process `lecture_video.mp4` with a scene detection sensitivity of 0.1, include 1 second before and after each scene in clips, use English for transcription, use the llama3.1 and mistral-nemo models for cleaning transcriptions, enable slide description and incorporation, use custom cleaning parameters, and generate a summary and MCQs.
+This command will process `lecture_video.mp4` with a scene detection sensitivity of 0.1, include 1 second before and after each scene in clips, use English for transcription, use the llama3.1 and mistral-nemo models for cleaning transcriptions, enable slide description and incorporation, use custom cleaning parameters, generate a summary and MCQs, and include specific fields in the YAML output.
 
 ### Output Files
 
@@ -87,6 +102,7 @@ The script includes several customization options at the beginning of the file. 
 - `$use_existing_files`: Whether to use existing files and skip initial processing steps by default.
 - `$make_summary_and_mcqs`: Whether to generate an overall lecture summary and MCQs by default.
 - `$print_transcriptions_with_mcqs`: Whether to print transcriptions with the MCQs for each section by default.
+- `%yaml_output_config`: Configuration for which fields to include in the YAML output.
 
 Additionally, there are several prompts that can be customized:
 
@@ -125,7 +141,7 @@ This script requires a Mac with Homebrew installed. If you don't have Homebrew, 
 2. Install Whisper:
 
    ```
-   brew install whisper
+   brew install openai-whisper
    ```
 
    Whisper is an automatic speech recognition (ASR) system developed by OpenAI. It's used in this script to transcribe the audio from the lecture videos.
@@ -212,4 +228,6 @@ which perl
 ```
 
 This should return a path in your Homebrew directory (e.g., `/usr/local/opt/perl/bin/perl` for Intel Macs or `/opt/homebrew/opt/perl/bin/perl` for Apple Silicon Macs).
+```
 
+This README now includes all the updated information about the script, including the new YAML output options and reflects the changes made to the script. It provides a comprehensive guide for users to understand, install, and use the Lecture Transcriber script.

@@ -63,6 +63,22 @@ my %http_request_options = (
 			    timeout => 120, # Timeout in seconds for HTTP requests
 			   );
 
+# Configuration for printing YAML output
+# Set to 1 to include the field, 0 to exclude
+my %yaml_output_config = (
+    group => 1,
+    start_scene => 0,
+    end_scene => 0,
+    start_time => 1,
+    end_time => 1,
+    clip_file => 1,
+    scenes => 0,
+    original_transcription => 1,
+    slide_description => 1,
+    cleaned_transcriptions => 1
+);
+
+
 #################################
 # Prompts for various functions #
 #################################
@@ -90,10 +106,10 @@ my $multimodal_transcription_prompt = qq{You are a popular university professor.
 2. Organize the content into a logical structure with clear paragraphs.
 3. Highlight key points or main ideas, using engaging language to emphasize their importance.
 4. Remove unnecessary repetitions, filler words, or off-topic remarks from the transcription.
-5. Maintain the original meaning and key information from the lecture.
+5. Maintain the original meaning and key information from the lecture. Do not drop information.
 6. Rely primarily on the transcription rather than the lecture slide descriptions. Incorporate information from the slide description only if you are certain that it is directly relevant to the transcription and provides additional clarity or information. Otherwise, ignore the slide descriptions. 
 7. Do not mention the slides.
-8. Keep the tone engaging, conversational, and educational. 
+8. Keep the tone engaging, conversational, and educational. Write a narrative text rather than bullet points.
 9. Aim for clarity and conciseness without losing important details.
 9. If parts of the transcriptions appear to be humorous, ignore those parts in the output.
 10. Do not add information that is not in the transcript or slide description.
@@ -108,8 +124,8 @@ my $unimodal_transcription_prompt = qq{You are a popular university professor. Y
 2. Organize the content into a logical structure with clear paragraphs.
 3. Highlight key points or main ideas, using engaging language to emphasize their importance.
 4. Remove unnecessary repetitions, filler words, or off-topic remarks.
-5. Maintain the original meaning and key information from the lecture.
-6. Keep the tone engaging, conversational, and educational. 
+5. Maintain the original meaning and key information from the lecture. Do not drop information.
+6. Keep the tone engaging, conversational, and educational. Write a narrative text rather than bullet points.
 7. Aim for clarity and conciseness without losing important details.
 8. If parts of the transcriptions appear to be humorous, ignore those parts in the output.
 9. Do not add information that is not in the transcript.
@@ -286,6 +302,58 @@ sub make_http_request_with_retries {
     }
   }
   return "";		    # Return empty string if all attempts fail
+}
+# Function to write yaml file
+sub write_final_yaml_file {
+	my ($yaml_file, $processed_groups_ref, $yaml_output_config_ref) = @_;
+	
+	
+	die "Error: Invalid processed groups data" unless ref($processed_groups_ref) eq 'ARRAY';
+	# We will check later if $yaml_output_config_ref is defined, and ignore it otherwise
+	
+	
+	open(my $yaml_fh, '>', $yaml_file) or die "Error: Could not open file '$yaml_file' $!";
+
+	my @yaml_output = map {
+	  {
+    	group => $_->{group},
+	      start_scene => $_->{start_scene},
+	      end_scene => $_->{end_scene},
+	      start_time => $_->{start_time},
+	      end_time => $_->{end_time},
+	      clip_file => $_->{clip_file},
+	      scenes => [map {
+		{
+		  id => $_->{id},
+		    start_pts => $_->{start_pts},
+		    start_time => $_->{start_time},
+		    end_pts => $_->{end_pts},
+		    end_time => $_->{end_time},
+		    slide_file => $_->{slide_file},
+		  }
+   	   } @{$_->{scenes}}],
+   	     original_transcription => $_->{original_transcription},
+	        slide_description => $_->{slide_description},
+	        cleaned_transcriptions => $_->{cleaned_transcriptions},
+	      }
+	} @$processed_groups_ref;
+
+
+	# Filter @yaml_output based on $yaml_output_config_ref
+	my @filtered_yaml_output;
+	if (defined $yaml_output_config_ref && ref($yaml_output_config_ref) ne 'HASH') {
+	    @filtered_yaml_output = map {
+    	    my $group = $_;
+			my %filtered_group = map { $_ => $group->{$_} } (grep { $yaml_output_config_ref->{$_} } keys %$group);
+	        \%filtered_group;
+	    } @yaml_output;
+	} else {
+		@filtered_yaml_output = @yaml_output;
+	}
+
+	print $yaml_fh YAML::XS::Dump(@filtered_yaml_output);
+
+	close $yaml_fh;
 }
 
 # Function to extract transcriptions and the used models from a yaml file
@@ -775,6 +843,17 @@ Getopt::Long::GetOptions(
 			 "base-url=s" => \$ollama_config{base_url},
 			 "use-existing-files" => \$use_existing_files, 
 			 "make-summary-and-mcqs" => \$make_summary_and_mcqs,
+			 # YAML output options
+			"yaml-print-group!" => \$yaml_output_config{group},
+		    "yaml-print-start-scene!" => \$yaml_output_config{start_scene},
+		    "yaml-print-end-scene!" => \$yaml_output_config{end_scene},
+		    "yaml-print-start-time!" => \$yaml_output_config{start_time},
+		    "yaml-print-end-time!" => \$yaml_output_config{end_time},
+		    "yaml-print-clip-file!" => \$yaml_output_config{clip_file},
+		    "yaml-print-scenes!" => \$yaml_output_config{scenes},
+		    "yaml-print-original-transcription!" => \$yaml_output_config{original_transcription},
+		    "yaml-print-slide-description!" => \$yaml_output_config{slide_description},
+		    "yaml-print-cleaned-transcriptions!" => \$yaml_output_config{cleaned_transcriptions},
 			 "debug" => \$DEBUG_FLAG,
 			 "help" => sub { print_help() }
 			) or die "Error in command line arguments\n";
@@ -784,11 +863,11 @@ die "Error: Input file does not exist\n" unless -e $input_file;
 die "Error: Input file is not an MP4 file\n" unless $input_file =~ /\.mp4$/i;
 
 # Create temporary folder
-my ($name, $path, $suffix) = File::Basename::fileparse($input_file, qr/\.[^.]*$/);
-my $output_folder = $name;
+my ($base_name, $path, $suffix) = File::Basename::fileparse($input_file, qr/\.[^.]*$/);
+my $output_folder = $base_name;
 
 my @timestamps;
-my $timestamp_file = "$output_folder/" . $output_folder . "_slide_changes.txt";
+my $timestamp_file = "$output_folder/" . $base_name . "_slide_changes.txt";
 my $fh;
 
 if (!$use_existing_files) {
@@ -929,35 +1008,7 @@ for my $group (@groups) {
 
 # Write final YAML file
 my $yaml_file = "$output_folder/$output_folder" . "_lecture_notes.yaml";
-open(my $yaml_fh, '>', $yaml_file) or die "Error: Could not open file '$yaml_file' $!";
-
-my @yaml_output = map {
-  {
-    group => $_->{group},
-      start_scene => $_->{start_scene},
-      end_scene => $_->{end_scene},
-      start_time => $_->{start_time},
-      end_time => $_->{end_time},
-      clip_file => $_->{clip_file},
-      scenes => [map {
-	{
-	  id => $_->{id},
-	    start_pts => $_->{start_pts},
-	    start_time => $_->{start_time},
-	    end_pts => $_->{end_pts},
-	    end_time => $_->{end_time},
-	    slide_file => $_->{slide_file},
-	  }
-      } @{$_->{scenes}}],
-        original_transcription => $_->{original_transcription},
-        slide_description => $_->{slide_description},
-        cleaned_transcriptions => $_->{cleaned_transcriptions},
-      }
-} @processed_groups;
-
-print $yaml_fh YAML::XS::Dump(@yaml_output);
-
-close $yaml_fh;
+write_final_yaml_file ($yaml_file, \@processed_groups, \%yaml_output_config);
 
 # Write final slide_changes.txt
 write_timestamp_file($timestamp_file, \@processed_groups, 'revised');
