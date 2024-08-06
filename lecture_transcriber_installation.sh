@@ -87,7 +87,7 @@ fi
 
 # Download the Lecture Transcriber script
 echo "Downloading Lecture Transcriber script..."
-curl -O https://raw.githubusercontent.com/adendress/lecture-transcriber/main/lecture_transcriber.pl
+curl -O https://raw.githubusercontent.com/aendress/lecture_transcriber/main/lecture_transcriber.pl
 chmod +x lecture_transcriber.pl
 
 echo "Installation complete. You can now run the Lecture Transcriber script using:"
