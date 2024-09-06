@@ -1,6 +1,3 @@
-Certainly! Here's the complete, updated README.md file:
-
-```markdown
 # Lecture Transcriber
 
 ## Author
@@ -228,6 +225,5 @@ which perl
 ```
 
 This should return a path in your Homebrew directory (e.g., `/usr/local/opt/perl/bin/perl` for Intel Macs or `/opt/homebrew/opt/perl/bin/perl` for Apple Silicon Macs).
-```
 
-This README now includes all the updated information about the script, including the new YAML output options and reflects the changes made to the script. It provides a comprehensive guide for users to understand, install, and use the Lecture Transcriber script.
+
